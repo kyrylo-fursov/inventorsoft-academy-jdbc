@@ -1,6 +1,7 @@
-package fursov.inventorsoftacademyjdbc.dao;
+package fursov.inventorsoftacademyjdbc.dao.h2;
 
 
+import fursov.inventorsoftacademyjdbc.dao.UserDao;
 import fursov.inventorsoftacademyjdbc.domain.Role;
 import fursov.inventorsoftacademyjdbc.domain.User;
 import org.slf4j.Logger;
@@ -16,10 +17,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-// TODO: extract constants for SQL queries
 @Repository
 public class H2UserDao implements UserDao {
     private static final Logger LOGGER = LoggerFactory.getLogger(H2UserDao.class);
+
+    private static final String SQL_ADD_USER = "INSERT INTO users (password, email, name, role_id) VALUES (?, ?, ?, ?)";
+    private static final String SQL_UPDATE_USER = "UPDATE users SET password = ?, email = ?, name = ?, role_id = ? WHERE id = ?";
+    private static final String SQL_GET_USER_BY_ID = "SELECT * FROM users WHERE id = ?";
+    private static final String SQL_GET_USER_BY_EMAIL = "SELECT * FROM users WHERE email = ?";
+    private static final String SQL_DELETE_USER = "DELETE FROM users WHERE id = ?";
+    private static final String SQL_GET_ALL_USERS = "SELECT * FROM users";
+
     private final DataSource dataSource;
 
     public H2UserDao(DataSource dataSource) {
@@ -37,40 +45,42 @@ public class H2UserDao implements UserDao {
     }
 
     @Override
-    public void addUser(User user) {
+    public boolean addUser(User user) {
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(
-                     "INSERT INTO users (password, email, name, role_id) VALUES (?, ?, ?, ?)")) {
+             PreparedStatement preparedStatement = connection.prepareStatement(SQL_ADD_USER)) {
             preparedStatement.setString(1, user.getPassword());
             preparedStatement.setString(2, user.getEmail());
             preparedStatement.setString(3, user.getName());
             preparedStatement.setInt(4, user.getRole().getId());
-            preparedStatement.executeUpdate();
+            int rowsAffected = preparedStatement.executeUpdate();
+            return rowsAffected > 0;
         } catch (SQLException e) {
             LOGGER.error("Error while adding user", e);
+            return false;
         }
     }
 
     @Override
-    public void updateUser(long id, User user) {
+    public boolean updateUser(long id, User user) {
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(
-                     "UPDATE users SET password = ?, email = ?, name = ?, role_id = ? WHERE id = ?")) {
+             PreparedStatement preparedStatement = connection.prepareStatement(SQL_UPDATE_USER)) {
             preparedStatement.setString(1, user.getPassword());
             preparedStatement.setString(2, user.getEmail());
             preparedStatement.setString(3, user.getName());
             preparedStatement.setInt(4, user.getRole().getId());
             preparedStatement.setLong(5, id);
-            preparedStatement.executeUpdate();
+            int rowsAffected = preparedStatement.executeUpdate();
+            return rowsAffected > 0;
         } catch (SQLException e) {
             LOGGER.error("Error while updating user", e);
+            return false;
         }
     }
 
     @Override
     public Optional<User> getUserById(long id) {
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement("SELECT * FROM users WHERE id = ?")) {
+             PreparedStatement preparedStatement = connection.prepareStatement(SQL_GET_USER_BY_ID)) {
             preparedStatement.setLong(1, id);
             try (ResultSet rs = preparedStatement.executeQuery()) {
                 if (rs.next()) {
@@ -86,7 +96,7 @@ public class H2UserDao implements UserDao {
     @Override
     public Optional<User> getUserByEmail(String email) {
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement("SELECT * FROM users WHERE email = ?")) {
+             PreparedStatement preparedStatement = connection.prepareStatement(SQL_GET_USER_BY_EMAIL)) {
             preparedStatement.setString(1, email);
             try (ResultSet rs = preparedStatement.executeQuery()) {
                 if (rs.next()) {
@@ -99,15 +109,16 @@ public class H2UserDao implements UserDao {
         return Optional.empty();
     }
 
-
     @Override
-    public void deleteUser(long id) {
+    public boolean deleteUser(long id) {
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement("DELETE FROM users WHERE id = ?")) {
+             PreparedStatement preparedStatement = connection.prepareStatement(SQL_DELETE_USER)) {
             preparedStatement.setLong(1, id);
-            preparedStatement.executeUpdate();
+            int rowsAffected = preparedStatement.executeUpdate();
+            return rowsAffected > 0;
         } catch (SQLException e) {
             LOGGER.error("Error while deleting user", e);
+            return false;
         }
     }
 
@@ -115,7 +126,7 @@ public class H2UserDao implements UserDao {
     public List<User> getAllUsers() {
         List<User> users = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement("SELECT * FROM users");
+             PreparedStatement preparedStatement = connection.prepareStatement(SQL_GET_ALL_USERS);
              ResultSet rs = preparedStatement.executeQuery()) {
             while (rs.next()) {
                 users.add(mapToUser(rs));

@@ -9,10 +9,10 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 @Component
-public class DaoRunner implements CommandLineRunner {
+public class UserDaoRunner implements CommandLineRunner {
     private final UserDao userDao;
 
-    public DaoRunner(UserDao userDao) {
+    public UserDaoRunner(UserDao userDao) {
         this.userDao = userDao;
     }
 

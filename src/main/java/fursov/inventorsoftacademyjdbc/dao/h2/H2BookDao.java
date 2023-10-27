@@ -1,5 +1,6 @@
-package fursov.inventorsoftacademyjdbc.dao;
+package fursov.inventorsoftacademyjdbc.dao.h2;
 
+import fursov.inventorsoftacademyjdbc.dao.BookDao;
 import fursov.inventorsoftacademyjdbc.domain.Book;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,7 +27,6 @@ public class H2BookDao implements BookDao {
 
 
     private final DataSource dataSource;
-
     public H2BookDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
